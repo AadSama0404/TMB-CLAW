@@ -26,7 +26,7 @@ Run the following command to preprocess input data:
 python data/data_preprocessing.py
 ```
 
-### Step 2: Run TMB-MTGraph
+### Step 2: Run TMB-CLAW
 
 Execute the main script to train and evaluate the model:
 
