@@ -1,6 +1,6 @@
 # TMB-CLAW
 
-This repository provides the implementation of **TMB-MTGraph**, a prognostic prediction model based on clonal mutation features. It is designed to handle heterogeneous cancer cohorts and improve survival prediction using clonal architecture-aware learning.
+This repository provides the implementation of **TMB-CLAW**, a prognostic prediction model based on clonal mutation features. It is designed to handle heterogeneous cancer cohorts and improve survival prediction using clonal architecture-aware learning.
 
 ## Directory Structure
 
