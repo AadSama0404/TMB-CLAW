@@ -14,7 +14,7 @@ This repository provides the implementation of **TMB-CLAW**, a prognostic predic
   Stores outputs such as predictions and plots.
 
 - `run_TMB_MTGraph.py`  
-  Main script to train and evaluate TMB-MTGraph.
+  Main script to train and evaluate TMB-CLAW.
 
 ## Getting Started
 
