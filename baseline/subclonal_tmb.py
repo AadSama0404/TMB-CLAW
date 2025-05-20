@@ -13,7 +13,7 @@ import pandas as pd
 import random
 
 from tmb_dataset import subclonal_dataset
-from model.TMB_CLAW import TMB_MTGraph
+from model.TMB_CLAW import TMB_CLAW
 from evaluation.metrics_calculation import Metrics_Calculation
 from evaluation.KM_plot import KM_Plot
 
@@ -48,13 +48,15 @@ group_cv = []
 fold_cv = []
 
 
-def TMB_MTGraph_Train(train_loader, models, optimizers, fold):
+def TMB_CLAW_Train(train_loader, models, optimizers, fold):
     '''
     sorted_data: [['TMB_sum', 'AF_avg', 'CCF_clone']]
     response: ['Study ID', 'ORR', 'PFS', 'Status']
     '''
     for i in range(subgroup_num):
         models[i].train()
+
+    NLL_loss = 0.
 
     for batch_idx, (features, response) in enumerate(train_loader):
         features, response = features.squeeze(0), response.squeeze(0)
@@ -73,6 +75,7 @@ def TMB_MTGraph_Train(train_loader, models, optimizers, fold):
 
         # Calculate the first part of the loss related to S and loss
         loss_subgroup = sum(loss[i] * S[study_index][i] for i in range(subgroup_num))
+        NLL_loss = NLL_loss + loss[study_index].item()
 
         # Stack theta_X into a vector
         theta_X_vec = torch.stack(theta_X).squeeze(1)  # shape: [subgroup_num, 1]
@@ -90,8 +93,11 @@ def TMB_MTGraph_Train(train_loader, models, optimizers, fold):
         for i in range(subgroup_num):
             optimizers[i].step()
 
+    avg_NLL_loss = NLL_loss / len(train_loader)
+    print(f"Train Loss: {avg_NLL_loss:.4f}")
 
-def TMB_MTGraph_Val(val_loader, models, save_flag, fold):
+
+def TMB_CLAW_Val(val_loader, models, save_flag, fold):
     for i in range(subgroup_num):
         models[i].eval()
 
@@ -118,10 +124,6 @@ def TMB_MTGraph_Val(val_loader, models, save_flag, fold):
             for i in range(A.shape[1]):
                 A_matrix[batch_idx][i] = np.round(A[0][i].detach().numpy(), 4)
             A_matrix[batch_idx][clone_num] = study_id
-
-    test_loss_all = test_loss_all / len(val_loader)
-    test_error_all = test_error_all / len(val_loader)
-    print(f'Test Loss: {test_loss_all.item():.4f}, Test error: {test_error_all:.4f}')
 
     if (save_flag == 1):
         '''
@@ -198,15 +200,15 @@ def Cross_Validation(raw_data):
         for i in range(subgroup_num):
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
             torch.manual_seed(42)
-            model = TMB_MTGraph().to(device)
+            model = TMB_CLAW().to(device)
             optimizer = torch.optim.Adam(model.parameters(), lr=lrs[fold][i], betas=(0.9, 0.999), weight_decay=10e-5)
             models[i] = model
             optimizers[i] = optimizer
 
         for epoch in range(epochs[fold]):
             print(f"Epoch {epoch + 1} --------------------------------------------------------------------")
-            TMB_MTGraph_Train(train_loader, models, optimizers, fold)
-            TMB_MTGraph_Val(val_loader, models, epoch == epochs[fold] - 1, fold)
+            TMB_CLAW_Train(train_loader, models, optimizers, fold)
+            TMB_CLAW_Val(val_loader, models, epoch == epochs[fold] - 1, fold)
 
     print("\n")
     print("*****************************************************************************")

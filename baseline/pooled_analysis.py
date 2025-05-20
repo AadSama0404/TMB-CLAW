@@ -13,8 +13,8 @@ import pandas as pd
 import random
 import statistics
 
-from tmb_dataset import TMB_MTGraph_dataset
-from model.TMB_CLAW import TMB_MTGraph
+from tmb_dataset import TMB_CLAW_dataset
+from model.TMB_CLAW import TMB_CLAW
 from evaluation.metrics_calculation import Metrics_Calculation
 from evaluation.KM_plot import KM_Plot
 
@@ -70,6 +70,9 @@ def Pooled_Train(train_loader, model, optimizer, fold):
         train_loss = train_loss + loss.item()
         train_error = train_error + error
 
+    avg_NLL_loss = train_loss / len(train_loader)
+    print(f"Train Loss: {avg_NLL_loss:.4f}")
+
 
 def Pooled_Val(val_loader, model, save_flag, fold):
     model.eval()
@@ -92,10 +95,6 @@ def Pooled_Val(val_loader, model, save_flag, fold):
             test_error_all = test_error_all + error
 
             prediction_list.append([label.item(), predicted_prob.item(), predicted_label.item(), study_id.item(), PFS.item(), Status.item()])
-
-    test_loss_all = test_loss_all / len(val_loader)
-    test_error_all = test_error_all / len(val_loader)
-    print(f'Test Loss: {test_loss_all.item():.4f}, Test error: {test_error_all:.4f}')
 
     if(save_flag ==1):
         '''
@@ -153,7 +152,7 @@ def Cross_Validation(raw_data):
     '''
     raw_data: [['Study ID', 'ORR', 'PFS', 'Status', ['TMB_sum', 'AF_avg', 'CCF_clone']]]
     '''
-    dataset = TMB_MTGraph_dataset(raw_data)
+    dataset = TMB_CLAW_dataset(raw_data)
     kfold = StratifiedKFold(n_splits=3, shuffle=True, random_state=42)
     labels = [patient[1] for patient in raw_data]
 
@@ -169,7 +168,7 @@ def Cross_Validation(raw_data):
         ## Initialize the models
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         torch.manual_seed(42)
-        model = TMB_MTGraph().to(device)
+        model = TMB_CLAW().to(device)
         optimizer = torch.optim.Adam(model.parameters(), lr=lrs[fold], betas=(0.9, 0.999), weight_decay=10e-5)
 
         for epoch in range(epochs[fold]):

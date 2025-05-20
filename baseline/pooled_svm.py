@@ -26,11 +26,9 @@ torch.manual_seed(42)
 ## Load dataset features
 clone_num = torch.load("../data/clone_num.pt")
 max_clone = clone_num
-print(max_clone)
 
 ## load hyperparameters
 oversample_rates = torch.load('../hyperparameter/oversample_rates.pt')
-print(oversample_rates)
 
 ## Training results
 study_cv = []

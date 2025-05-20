@@ -59,7 +59,7 @@ def TMB_CLAW_Train(train_loader, models, optimizers, fold):
     for i in range(subgroup_num):
         models[i].train()
 
-    total_loss_subgroup = 0.
+    NLL_loss = 0.
 
     for batch_idx, (features, response) in enumerate(train_loader):
         features, response = features.squeeze(0), response.squeeze(0)
@@ -78,7 +78,7 @@ def TMB_CLAW_Train(train_loader, models, optimizers, fold):
 
         # Calculate the first part of the loss related to S and loss
         loss_subgroup = sum(loss[i] * S[study_index][i] for i in range(subgroup_num))
-        total_loss_subgroup = total_loss_subgroup + loss_subgroup.item()
+        NLL_loss = NLL_loss + loss[study_index].item()
 
         # Stack theta_X into a vector
         theta_X_vec = torch.stack(theta_X).squeeze(1)  # shape: [subgroup_num, 1]
@@ -96,8 +96,8 @@ def TMB_CLAW_Train(train_loader, models, optimizers, fold):
         for i in range(subgroup_num):
             optimizers[i].step()
 
-    avg_loss_subgroup = total_loss_subgroup / len(train_loader)
-    print(f"Train Loss (subgroup only): {avg_loss_subgroup:.4f}")
+    avg_NLL_loss = NLL_loss / len(train_loader)
+    print(f"Train Loss: {avg_NLL_loss:.4f}")
 
 
 def TMB_CLAW_Val(val_loader, models, save_flag, fold):

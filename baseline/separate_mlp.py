@@ -52,6 +52,8 @@ def Separate_MLP_Train(train_loader, models, optimizers, fold):
     for i in range(subgroup_num):
         models[i].train()
 
+    NLL_loss = 0.
+
     for batch_idx, (features, response) in enumerate(train_loader):
         features, response = features.squeeze(0), response.squeeze(0)
         study_id = response[0]
@@ -59,9 +61,13 @@ def Separate_MLP_Train(train_loader, models, optimizers, fold):
         label = response[1]
 
         loss, predicted_prob, error, _ = models[study_index].calculate(features, label, pos_weights[fold][study_index])
+        NLL_loss = NLL_loss + loss.item()
         optimizers[study_index].zero_grad()
         loss.backward()
         optimizers[study_index].step()
+
+    avg_NLL_loss = NLL_loss / len(train_loader)
+    print(f"Train Loss: {avg_NLL_loss:.4f}")
 
 
 def Separate_MLP_Val(val_loader, models, save_flag, fold):

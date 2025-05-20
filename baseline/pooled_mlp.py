@@ -69,6 +69,9 @@ def Pooled_MLP_Train(train_loader, model, optimizer, fold):
         train_loss = train_loss + loss.item()
         train_error = train_error + error
 
+    avg_NLL_loss = train_loss / len(train_loader)
+    print(f"Train Loss: {avg_NLL_loss:.4f}")
+
 
 def Pooled_MLP_Val(val_loader, model, save_flag, fold):
     model.eval()

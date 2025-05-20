@@ -12,8 +12,8 @@ import numpy as np
 import pandas as pd
 import random
 
-from tmb_dataset import TMB_MTGraph_dataset
-from model.TMB_CLAW import TMB_MTGraph
+from tmb_dataset import TMB_CLAW_dataset
+from model.TMB_CLAW import TMB_CLAW
 from evaluation.metrics_calculation import Metrics_Calculation
 from evaluation.KM_plot import KM_Plot
 
@@ -53,6 +53,8 @@ def Separate_Train(train_loader, models, optimizers, fold):
     for i in range(subgroup_num):
         models[i].train()
 
+    NLL_loss = 0.
+
     for batch_idx, (features, response) in enumerate(train_loader):
         features, response = features.squeeze(0), response.squeeze(0)
         study_id = response[0]
@@ -60,9 +62,13 @@ def Separate_Train(train_loader, models, optimizers, fold):
         label = response[1]
 
         loss, predicted_prob, error, _, _ = models[study_index].calculate(features, label, pos_weights[fold][study_index])
+        NLL_loss = NLL_loss + loss.item()
         optimizers[study_index].zero_grad()
         loss.backward()
         optimizers[study_index].step()
+
+    avg_NLL_loss = NLL_loss / len(train_loader)
+    print(f"Train Loss: {avg_NLL_loss:.4f}")
 
 
 def Separate_Val(val_loader, models, save_flag, fold):
@@ -88,10 +94,6 @@ def Separate_Val(val_loader, models, save_flag, fold):
             test_error_all = test_error_all + error
 
             prediction_list.append([label.item(), predicted_prob.item(), predicted_label.item(), study_id.item(), PFS.item(), Status.item()])
-
-    test_loss_all = test_loss_all / len(val_loader)
-    test_error_all = test_error_all / len(val_loader)
-    print(f'Test Loss: {test_loss_all.item():.4f}, Test error: {test_error_all:.4f}')
 
     if(save_flag ==1):
         '''
@@ -149,7 +151,7 @@ def Cross_Validation(raw_data):
     '''
     raw_data: [['Study ID', 'ORR', 'PFS', 'Status', ['TMB_sum', 'AF_avg', 'CCF_clone']]]
     '''
-    dataset = TMB_MTGraph_dataset(raw_data)
+    dataset = TMB_CLAW_dataset(raw_data)
     kfold = StratifiedKFold(n_splits=3, shuffle=True, random_state=42)
     labels = [patient[1] for patient in raw_data]
 
@@ -168,7 +170,7 @@ def Cross_Validation(raw_data):
         for i in range(subgroup_num):
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
             torch.manual_seed(42)
-            model = TMB_MTGraph().to(device)
+            model = TMB_CLAW().to(device)
             optimizer = torch.optim.Adam(model.parameters(), lr=lrs[fold][i], betas=(0.9, 0.999), weight_decay=10e-5)
             models[i] = model
             optimizers[i] = optimizer
